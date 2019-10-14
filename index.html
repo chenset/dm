@@ -216,7 +216,9 @@
                 input.value = input.getAttribute('placeholder');
             }
 
-            document.getElementById('layer').style.display = "block";
+            showLoading();
+            document.getElementById('log-output').innerHTML = '';
+
             window._run__script_({
                 url: input.value,
                 proxy: 'https://request.flysay.com/',
@@ -229,6 +231,8 @@
                 holdTimeMove: 21,
                 holdTimePos: 6,
                 fontAlpha: "88",// 00 ~ FF
+                logging: logging,
+                hiddenLoading: hiddenLoading,
                 callback: function (title, list) {
                     window.bilibiliFiles = [];//置空
                     window.bilibiliTitle = title;
@@ -236,9 +240,9 @@
                         window.bilibiliFiles.push(new File([item.content], item.fileName));
                     });
 
-                    document.getElementById('log-output').innerText = '已经获取' + window.bilibiliFiles.length + "个弹幕";
+                    logging('已经获取' + window.bilibiliFiles.length + "个弹幕");
                     callback && callback();
-                    document.getElementById('layer').style.display = "none";
+                    hiddenLoading();
                 },
             });
         }
@@ -248,7 +252,8 @@
     <br>
 
     <label for="rename-start-index">
-        <input type="text" value="1" name="rename-start-index" id="rename-start-index" style="width: 50px"> 替换符"#"第一集的序号. 有的集数是从0集开始的,
+        <input type="text" value="1" name="rename-start-index" id="rename-start-index" style="width: 50px">
+        替换符"#"第一集的序号. 有的集数是从0集开始的,
         就需要把这个值设置为0. 如 Fate UBW
     </label>
     <div class="rename-wrap">
@@ -284,45 +289,47 @@
         });
 
         function mergeBtnTriggerHandler() {
-            document.getElementById('layer').style.display = "block";
+            showLoading();
             if (fileList.length && window.bilibiliFiles.length) {
                 mergeBilibiliFiles(function (list) {
                     download(fileListRename(list, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
-                        document.getElementById('layer').style.display = "none";
+                        hiddenLoading();
                     });
                 }, function (err) {
-                    document.getElementById('layer').style.display = "none";
-                    document.getElementById('log-output').innerText = err;
+                    hiddenLoading();
+                    logging(err);
                 });
             } else if (fileList.length && document.getElementById('bilibili-url-input').value !== "") {
                 getBilibiliDanMu(true, function () {
                     mergeBilibiliFiles(function (list) {
                         download(fileListRename(list, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
-                            document.getElementById('layer').style.display = "none";
+                            hiddenLoading();
                         });
                     }, function (err) {
-                        document.getElementById('layer').style.display = "none";
-                        document.getElementById('log-output').innerText = err;
+                        hiddenLoading();
+                        logging(err);
                     });
                 });
             } else if (fileList.length) {
                 download(fileListRename(fileList, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
-                    document.getElementById('layer').style.display = "none";
+                    hiddenLoading();
                 });
             } else if (window.bilibiliFiles.length) {
                 getBilibiliDanMu(false, function () {
-                    document.getElementById('layer').style.display = "none";
+                    hiddenLoading();
                 });
             } else {
-                document.getElementById('log-output').innerText = '合并前需要先选择弹幕与字幕';
-                document.getElementById('layer').style.display = "none";
+                logging('合并前需要先选择弹幕与字幕');
+                hiddenLoading();
             }
         }
     </script>
 </div>
 
 <footer style="position: fixed;bottom:20px;left:0;width:100%;text-align: center">
-    <span id="log-output" style="color: #ff433f"><a href="https://github.com/chenset/dm" target="_blank" style="color: #41B883;">GitHub</a></span>
+    <div id="log-output" style="max-height: 75px;overflow:hidden;">
+        <a href="https://github.com/chenset/dm" target="_blank" style="color: #41B883;">GitHub</a>
+    </div>
 </footer>
 
 <script async defer src="./js/JSZip/jszip.min.js"></script>
@@ -521,10 +528,10 @@
     });
 
     function subBtnTriggerHandler() {
-        document.getElementById('layer').style.display = "block";
+        showLoading();
 
         download(fileListRename(fileList, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
-            document.getElementById('layer').style.display = "none";
+            hiddenLoading();
         });
     }
 
@@ -566,7 +573,7 @@
             saveAs(blob, "flysay.com" + ".zip");
             callback && callback()
         }, function (err) {
-            document.getElementById('log-output').innerText = err;
+            logging(err);
         });
     }
 
@@ -610,6 +617,20 @@
             unit = 'MB';
         }
         return parseFloat(kbUnit).toFixed(2) + unit;
+    }
+
+    function showLoading() {
+        document.getElementById('layer').style.display = "block";
+    }
+
+    function hiddenLoading() {
+        document.getElementById('layer').style.display = "none";
+    }
+
+    function logging(msg) {
+        let doc = document.getElementById('log-output');
+        doc.innerHTML = doc.innerHTML + '<br>' + msg;
+        doc.scrollTop = doc.scrollHeight;
     }
 </script>
 

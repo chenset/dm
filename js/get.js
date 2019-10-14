@@ -8,6 +8,9 @@ window._run__script_ = function (option) {
     option.holdTimeMove = option.holdTimeMove || 20;
     option.holdTimePos = option.holdTimePos || 6;
     option.fontAlpha = option.fontAlpha || "88";// 00 ~ FF
+    option.logging = option.logging || console.log;
+    option.hiddenLoading = option.hiddenLoading || function () {
+    };
 
     //弹幕出现时间偏移设置. 正数提前, 负数延后.
     option.offset = parseFloat(option.offset);
@@ -23,7 +26,7 @@ window._run__script_ = function (option) {
     });
 
     function start() {
-        document.getElementById('log-output').innerText = "开始解析地址";
+        option.logging('开始解析地址');
 
         // 获取番剧标题
         ajax({
@@ -33,8 +36,8 @@ window._run__script_ = function (option) {
                 let titleRes = titleRegex.exec(res.responseText);
                 if (!titleRes) {
 
-                    document.getElementById('layer').style.display = "none";
-                    document.getElementById('log-output').innerText = "无法获取标题, 需确定当前链接为番剧播放页面";
+                    option.hiddenLoading();
+                    option.logging('无法获取标题, 需确定当前链接为番剧播放页面');
                     throw "无法获取标题, 需确定当前链接为番剧播放页面"
                 }
 
@@ -45,7 +48,7 @@ window._run__script_ = function (option) {
                     let epJson = JSON.parse(epListRes[1]);
                     for (let i in epJson) {
                         if (option.trySkip && parseInt(epJson[i]["title"]) != epJson[i]["title"]) {
-                            document.getElementById('log-output').innerText = "跳过特殊集:" + epJson[i]["longTitle"];
+                            option.logging("跳过特殊集:" + epJson[i]["longTitle"]);
                             continue;
                         }
 
@@ -56,16 +59,16 @@ window._run__script_ = function (option) {
                             longTitle: epJson[i]["longTitle"].replace(/\//ig, '-'), //longTitle为"教科书\u002F催眠术\u002F睡醒\u002F打水漂"这种格式在zip打包时会生成层级目录, 所以使用了String.replace()
                         })
                     }
-                    document.getElementById('log-output').innerText = '开始下载' + epList.length + '个弹幕';
+                    option.logging('开始下载' + epList.length + '个弹幕');
                     getDanMu(titleRes[1], epList);
                 } else {
-                    document.getElementById('log-output').innerText = '无法从HTML中获取内容';
-                    document.getElementById('layer').style.display = "none";
+                    option.logging('无法从HTML中获取内容');
+                    option.hiddenLoading();
                     throw "无法获取内容";
                 }
             }, error: function (err) {
-                document.getElementById('log-output').innerText = '无法从远程地址中获取内容';
-                document.getElementById('layer').style.display = "none";
+                option.logging('无法从远程地址中获取内容');
+                option.hiddenLoading();
                 console.log(err);
                 throw "无法从远程地址中获取内容";
             }
@@ -76,12 +79,11 @@ window._run__script_ = function (option) {
         let stringJson = [];
         epList.forEach(function (item) {
             ajax({
-                url:  option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
+                url: option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
                 success: function (res) {
                     let fileName = title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass";
 
-                    document.getElementById('log-output').innerText = '开始转换: ' + fileName;
-
+                    option.logging('开始转换: ' + fileName);
                     stringJson.push({
                         "content": handleXml(res.responseXML),
                         "i": item.i,
@@ -94,15 +96,15 @@ window._run__script_ = function (option) {
                         stringJson.sort(dmSortCompare); // 根据集数排序
 
                         if (!option.doNotDownload) {
-                            document.getElementById('log-output').innerText = '转换成功, 正在打包下载';
+                            option.logging('转换成功, 正在打包下载');
                             download(title, stringJson, option.callback);
                         } else {
                             option.callback && option.callback(title, stringJson);
                         }
                     }
                 }, error: function (err) {
-                    document.getElementById('log-output').innerText = '无法从远程地址中获取弹幕';
-                    document.getElementById('layer').style.display = "none";
+                    option.logging('无法从远程地址中获取弹幕');
+                    option.hiddenLoading();
                     console.log(err);
                     throw "无法从远程地址中获取弹幕";
                 }
@@ -119,9 +121,8 @@ window._run__script_ = function (option) {
             saveAs(blob, title + ".zip");
             callback && callback(title, stringResult)
         }, function (err) {
-
-            document.getElementById('layer').style.display = "none";
-            document.getElementById('log-output').innerText = '下载失败';
+            option.hiddenLoading();
+            option.logging('打包下载失败');
             throw err;
         });
     }
