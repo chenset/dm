@@ -77,13 +77,14 @@ window._run__script_ = function (option) {
 
     function getDanMu(title, epList) {
         let stringJson = [];
+        let itemIndex = 0;
         epList.forEach(function (item) {
             ajax({
                 url: option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
                 success: function (res) {
                     let fileName = title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass";
 
-                    option.logging('开始转换: ' + fileName);
+                    option.logging('开始转换(' + (++itemIndex) + '/' + epList.length + '): ' + fileName);
                     stringJson.push({
                         "content": handleXml(res.responseXML),
                         "i": item.i,

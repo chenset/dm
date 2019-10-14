@@ -211,6 +211,8 @@
         });
 
         function getBilibiliDanMu(doNotDownload, callback) {
+            let startTime = (+new Date());
+
             let input = document.getElementById('bilibili-url-input');
             if (input.value.trim() === '') {
                 input.value = input.getAttribute('placeholder');
@@ -240,9 +242,9 @@
                         window.bilibiliFiles.push(new File([item.content], item.fileName));
                     });
 
-                    logging('已经获取' + window.bilibiliFiles.length + "个弹幕");
                     callback && callback();
                     hiddenLoading();
+                    logging('已经获取' + window.bilibiliFiles.length + "个弹幕. 耗时: " + (((+new Date()) - startTime) / 1000) + 's');
                 },
             });
         }
