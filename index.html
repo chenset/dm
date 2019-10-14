@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>番剧弹幕与字幕转换</title>
+    <!--    <script src="/js/get.js"></script>-->
+
+    <!--
+
+    // F12 console 控制台中执行
+    window.fs1d3f = document.createElement('script');
+    window.fs1d3f.src = "https://b.flysay.com/js/get.js?"+(+new Date());
+    document.body.appendChild(window.fs1d3f);
+    window.fs1d3f.onload = function () {
+        window.fs1d3f.onload = null;
+        window._run__script_({});
+    };
+
+    -->
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            -webkit-box-sizing: border-box;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif, "Microsoft YaHei", 'Helvetica Neue';
+            color: #333;
+            font-size: 14px;
+        }
+
+        .container {
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 0 15px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            color: #555;
+            z-index: 100;
+        }
+
+        #tbody td {
+            padding: 10px;
+        }
+
+        #tbody tr:hover {
+            cursor: move;
+            background: #f3f3f3 !important;
+        }
+
+        #tbody tr:nth-child(odd) {
+            background: #f7f7f7;
+        }
+
+        .rename-wrap, .convert-wrap {
+            margin: 40px 0;
+            position: relative;
+        }
+
+        #rename, #bilibili-url-input {
+            padding: 9px;
+            width: 100%;
+            border: 1px solid #e1e1e1;
+        }
+
+        .btn {
+            padding: 9px;
+            background: #f3f3f3;
+            color: #41B883;
+            cursor: pointer;
+            border: none;
+        }
+
+        #download, #convert-btn {
+            position: absolute;
+            top: 1px;
+            right: 1px;
+        }
+
+        .selector-wrap {
+            position: relative;
+            margin: 40px 0 20px;
+            height: 100px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+        }
+
+        .selector-text {
+            display: inline-block;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            font-size: 26px;
+            margin-top: -20px;
+            height: 40px;
+            width: 100%;
+            color: #ccc;
+        }
+
+        #filesInput {
+            cursor: pointer;
+            z-index: 9999;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .td-size {
+            text-align: right;
+        }
+
+        .lds-dual-ring {
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            top: 50%;
+            left: 50%;
+            margin-top: -18px;
+            margin-left: -18px;
+        }
+
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 36px;
+            height: 36px;
+            margin: 1px;
+            border-radius: 50%;
+            border-width: 4px;
+            border-style: solid;
+            border-color: #ff5252 transparent #ff5252 transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+
+        @keyframes lds-dual-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <script>
+
+        loadScript("/js/get.js?" + (+new Date()));
+
+        function loadScript(src, callback) {
+            let loadedScript = document.querySelectorAll('head script');
+            for (let i = 0; i < loadedScript.length; i++) {
+                if (loadedScript[i].src === src) {
+                    callback && callback();
+                    return;
+                }
+            }
+
+            let script = document.createElement('script');
+            script.onload = function () {
+                script.onload = null;
+                callback && callback();
+            };
+            script.src = src;
+            document.getElementsByTagName('head')[0].appendChild(script);
+        }
+    </script>
+</head>
+<body>
+
+
+<div style="display:none;position:fixed;z-index: 999;width: 100%;height: 100%;background: none;" id="layer">
+    <div class="lds-dual-ring" id="loading"></div>
+</div>
+
+
+<div class="container" id="drop-zone">
+    <br>
+    <h2># B站弹幕转换</h2>
+    <br>
+    <label for="try-skip">
+        <input type="checkbox" id="try-skip" value="1"> 尝试跳过特殊集. 如"11.5","总集篇","SP"这类
+    </label>
+    <br>
+    <label for="offset">
+        <input type="text" id="offset" value="" placeholder="0.0000"> 弹幕出现时间偏移设置. 正数提前, 负数延后.
+    </label>
+    <div class="convert-wrap">
+        <input type="text" value="" id="bilibili-url-input"
+               placeholder="https://www.bilibili.com/bangumi/play/ep278219">
+        <button type="button" id="convert-btn" class="btn">
+            回车下载弹幕
+        </button>
+    </div>
+    <script>
+        window.bilibiliFiles = [];
+        window.bilibiliTitle = null;
+        document.getElementById('convert-btn').addEventListener('click', function () {
+            getBilibiliDanMu(false);
+        });
+
+        document.getElementById('bilibili-url-input').addEventListener('keyup', function (e) {
+            if (e.key == 13) {
+                getBilibiliDanMu(false);
+            } else if (e.keyIdentifier == 13) {
+                getBilibiliDanMu(false);
+            } else if (e.keyCode == 13) {
+                getBilibiliDanMu(false);
+            }
+        });
+
+
+        function getBilibiliDanMu(doNotDownload, callback) {
+            let input = document.getElementById('bilibili-url-input');
+            if (input.value.trim() === '') {
+                input.value = input.getAttribute('placeholder');
+            }
+
+            document.getElementById('layer').style.display = "block";
+            window._run__script_({
+                url: input.value,
+                proxy: 'https://request.flysay.com/',
+                doNotDownload: doNotDownload,
+                trySkip: document.getElementById('try-skip').checked,
+                offset: document.getElementById('offset').value,
+                playResX: 1920,
+                playResY: 1080,
+                fontSize: 19,
+                holdTimeMove: 21,
+                holdTimePos: 6,
+                fontAlpha: "88",// 00 ~ FF
+                callback: function (title, list) {
+                    window.bilibiliFiles = [];//置空
+                    window.bilibiliTitle = title;
+                    list.forEach(function (item) {
+                        window.bilibiliFiles.push(new File([item.content], item.fileName));
+                    });
+
+                    console.log('已经获取' + window.bilibiliFiles.length + "个弹幕");
+                    callback && callback();
+                    document.getElementById('layer').style.display = "none";
+                },
+            });
+        }
+    </script>
+
+    <br>
+    <h2># <span style="">字幕</span>批量改名</h2>
+    <br>
+
+    <label for="rename-start-index">
+        <input type="text" value="1" name="rename-start-index" id="rename-start-index"> 替换符"#"第一集的序号. 有的集数是从0集开始的,
+        就需要把这个值设置为0. 如 Fate UBW
+    </label>
+    <div class="rename-wrap">
+        <input type="text" value="" name="rename" id="rename"
+               placeholder='新的文件名, "#"为序号替换符. 一般使用"##"来替换12集的字幕文件'>
+        <button type="button" id="download" class="btn">
+            回车键下载字幕
+        </button>
+    </div>
+    <div class="selector-wrap">
+        <p class="selector-text">拖拽文件或者点击此处选择文件</p>
+        <input type="file"
+               id="filesInput"
+               multiple="multiple"
+               accept="*"/>
+    </div>
+    <table>
+        <tbody id="tbody">
+        </tbody>
+    </table>
+
+    <br>
+    <h2># <span style="">字幕&弹幕</span>合并</h2>
+    <br>
+    某些播放器的字幕防遮挡功能会导致双字幕时出现字幕上移, 使用合并功能后就会成为一个单独的字幕文件
+    <br>
+    <br>
+    <button class="btn" id="merge-btn">点击合并</button>
+    <script>
+        document.getElementById('merge-btn').addEventListener('click', function (e) {
+            mergeBtnTriggerHandler()
+        });
+
+        function mergeBtnTriggerHandler() {
+            document.getElementById('layer').style.display = "block";
+            if (fileList.length && window.bilibiliFiles.length) {
+                mergeBilibiliFiles(function (list) {
+                    download(fileListRename(list, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
+                        document.getElementById('layer').style.display = "none";
+                    });
+                }, function (err) {
+                    alert(err);
+                    document.getElementById('layer').style.display = "none";
+                });
+            } else if (fileList.length && document.getElementById('bilibili-url-input').value !== "") {
+                getBilibiliDanMu(true, function () {
+                    mergeBilibiliFiles(function (list) {
+                        download(fileListRename(list, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
+                            document.getElementById('layer').style.display = "none";
+                        });
+                    }, function (err) {
+                        alert(err);
+                        document.getElementById('layer').style.display = "none";
+                    });
+                });
+            } else if (fileList.length) {
+                download(fileListRename(fileList, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
+                    document.getElementById('layer').style.display = "none";
+                });
+            } else if (window.bilibiliFiles.length) {
+                getBilibiliDanMu(false, function () {
+                    document.getElementById('layer').style.display = "none";
+                });
+            } else {
+                alert("合并前需要先选择弹幕与字幕");
+                document.getElementById('layer').style.display = "none";
+            }
+        }
+    </script>
+</div>
+
+<!--<footer style="position: fixed;bottom:20px;left:0;width:100%;text-align: center">-->
+<!--<a href="https://github.com/chenset/subtitle-file-rename" target="_blank" style="color: #41B883;">GitHub</a>-->
+<!--</footer>-->
+
+<script async defer src="./js/JSZip/jszip.min.js"></script>
+<script async defer src="./js/JSZipUtils/jszip-utils.min.js"></script>
+<script async defer src="./js/FileSaver/FileSaver.js"></script>
+<script src="./js/Sortable/Sortable.min.js"></script>
+
+<script>
+    Sortable.create(document.getElementById('tbody'), {
+        draggable: 'tr',
+        animation: 100,
+        onEnd: function (e) {
+            let sourceEl = fileList.splice(e.newIndex, 1, fileList[e.oldIndex]);
+            fileList.splice(e.oldIndex, 1);
+            fileList.splice(e.oldIndex > e.newIndex ? e.newIndex + 1 : e.newIndex - 1, 0, sourceEl[0]);
+            refreshTable();
+        },
+    });
+
+    const hoverClassName = 'hover';
+    const dropZone = document.getElementById('drop-zone');
+    let fileList = [];
+
+    //https://github.com/RubaXa/Sortable/issues/985
+    document.body.ondrop = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
+    dropZone.addEventListener("dragenter", function (e) {
+        e.preventDefault();
+        dropZone.classList.add(hoverClassName);
+    });
+    dropZone.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        dropZone.classList.add(hoverClassName);
+    });
+    dropZone.addEventListener("dragleave", function (e) {
+        e.preventDefault();
+        dropZone.classList.remove(hoverClassName);
+    });
+    dropZone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        dropZone.classList.remove(hoverClassName);
+        if (!e.dataTransfer.files.length) {
+            return;
+        }
+        Array.from(e.dataTransfer.files).forEach(function (file) {
+            fileList.push(file);
+            renameInputFillWhenEmpty();
+        });
+
+        // refreshDropZone();
+        refreshTable();
+    });
+    document.getElementById('filesInput').addEventListener('change', function (e) {
+        e.preventDefault();
+
+
+        // let scriptInfoRegex = new RegExp(/\[script\s+info]/ig);
+        // let titleRegex = new RegExp(/\[script\s+info]/ig);
+        // let synchRegex = new RegExp(/\[script\s+info]/ig);
+        // let collisionsRegex = new RegExp(/\[script\s+info]/ig);
+        // let playResX= new RegExp(/\[script\s+info]/ig);
+        // let playResX= new RegExp(/\[script\s+info]/ig);
+
+
+        // Array.from(e.target.files || e.dataTransfer.files).forEach(function (file) {
+        //     let subReader = new FileReader();
+        //     subReader.onload = function (e) {
+        //         subReader.onload = null;
+        //         console.log(subConvert(e.target.result.trim().split("\n")))
+        //     };
+        //     subReader.readAsText(file);
+        // });
+        //
+        // return;
+
+        Array.from(e.target.files || e.dataTransfer.files).forEach(function (file) {
+            fileList.push(file);
+            renameInputFillWhenEmpty();
+        });
+
+        e.target.value = '';
+
+        // refreshDropZone();
+        refreshTable();
+    });
+
+
+    function renameInputFillWhenEmpty() {
+        if (document.getElementById('rename').value === "" && fileList.length) {
+            document.getElementById('rename').value = fileList[0].name;
+        }
+    }
+
+    function subConvert(lines) {
+        //读取分辨率
+        let resTimes = 1;
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim().toLowerCase().startsWith('playresx:')) {
+                resTimes = 1920 / parseInt(lines[i].trim().toLowerCase().substring(9));
+                if (isNaN(resTimes)) {
+                    resTimes = 1;
+                }
+                break;
+            }
+        }
+
+        let newList = [];
+        lines.forEach(function (line) {
+            line = line.trim();
+            let lowerLine = line.toLowerCase();
+            if (
+                lowerLine.startsWith('[v4+ styles]')
+                || lowerLine.startsWith('format:')
+                || lowerLine.startsWith('style:')
+                || lowerLine.startsWith('[events]')
+                || lowerLine.startsWith('dialogue:')
+                || lowerLine === ""
+            ) {
+
+                // 缩放字体
+                if (lowerLine.startsWith('style:')) {
+                    let fontSizeRes = line.match(/,\s?(\d+)\s?,/);
+                    if (!!fontSizeRes) {
+                        let fontSize = fontSizeRes[1] * resTimes;
+                        if (fontSize > 65) {
+                            fontSize *= 0.85//默认都太大了
+                        }
+                        line = line.replace(/,\s?\d+\s?,/, ',' + Math.floor(fontSize) + ',');
+                    }
+                }
+                newList.push(line);
+            }
+        });
+
+        return newList;
+    }
+
+    function mergeBilibiliFiles(callback, failureCallback) {
+        let newFileList = [];
+        window.bilibiliFiles.forEach(function (file, index) {
+            let bilibiliReader = new FileReader();
+            bilibiliReader.onload = function (e) {
+                bilibiliReader.onload = null;
+
+                //todo 但字幕数量不对其时的处理
+                if (fileList.hasOwnProperty(index)) {
+
+                    let bilibiliContent = e.target.result;
+                    let subReader = new FileReader();
+                    subReader.onload = function (e) {
+                        subReader.onload = null;
+                        newFileList.push(new File([bilibiliContent.trim() + "\r\n" + subConvert(e.target.result.trim().split("\n")).join("\r\n")], index));
+                        if (window.bilibiliFiles.length === newFileList.length) {
+                            //回调
+                            callback(newFileList.sort(function (a, b) { //根据索引排序
+                                if (parseInt(a.name) < parseInt(b.name)) {
+                                    return -1;
+                                }
+                                if (parseInt(a.name) > parseInt(b.name)) {
+                                    return 1;
+                                }
+                                return 0;
+                            }))
+                        }
+                    };
+                    subReader.readAsText(fileList[index]);
+                }
+            };
+            bilibiliReader.readAsText(file);
+        });
+
+        if (window.bilibiliFiles.length !== fileList.length) {
+            let warning = "无法完成合并: 弹幕数量: " + window.bilibiliFiles.length + " 字幕数量: " + fileList.length;
+            failureCallback && failureCallback(warning);
+            throw warning;
+            // alert(warning);
+        }
+    }
+
+    document.getElementById('download').addEventListener('click', function (e) {
+        e.preventDefault();
+        subBtnTriggerHandler()
+    });
+
+    document.getElementById('rename').addEventListener('keyup', function (e) {
+        if (e.key == 13) {
+            subBtnTriggerHandler()
+        } else if (e.keyIdentifier == 13) {
+            subBtnTriggerHandler()
+        } else if (e.keyCode == 13) {
+            subBtnTriggerHandler()
+        }
+    });
+
+    function subBtnTriggerHandler() {
+        document.getElementById('layer').style.display = "block";
+
+        download(fileListRename(fileList, document.getElementById('rename').value, document.getElementById('rename-start-index').value), function () {
+            document.getElementById('layer').style.display = "none";
+        });
+    }
+
+    function fileListRename(fileList, sourceName, startIndex) {
+        startIndex = parseFloat(startIndex);
+        if (isNaN(startIndex)) {
+            startIndex = 1;
+        }
+
+        let jsonFileList = {};
+        let match = sourceName.match(/#+/);
+        let fileName = sourceName;
+
+        fileList.forEach(function (file, index) {
+            if (match) {
+                let len = match[0].length;
+                let i = match['index'];
+                let strNumber = '' + (index + startIndex);
+                let pad = strNumber;
+                for (let ii = 0; ii < len - strNumber.length; ii++) {
+                    pad = '0' + pad;
+                }
+
+                fileName = sourceName.substring(0, i) + pad + sourceName.substring(i + len);
+            }
+            jsonFileList[fileName] = file
+        });
+        return jsonFileList;
+    }
+
+
+    function download(files, callback) {
+        let zip = new JSZip();
+        for (let i in files) {
+            zip.file(i, files[i])
+        }
+
+        zip.generateAsync({type: "blob"}).then(function (blob) { // 1) generate the zip file
+            saveAs(blob, "flysay.com" + ".zip");
+            callback && callback()
+        }, function (err) {
+            alert(err);
+        });
+    }
+
+    let timer132748238424 = null;
+
+    // function refreshDropZone() {
+    //     Array.from(document.getElementsByClassName('selector-wrap')).forEach(function (dom) {
+    //         if (fileList.length) {
+    //             dom.style.height = '100px';
+    //         } else {
+    //             dom.style.height = '500px';
+    //         }
+    //     });
+    // }
+
+    function refreshTable() {
+        clearTimeout(timer132748238424);
+        timer132748238424 = setTimeout(function () {
+            let tBody = document.getElementById('tbody');
+            tBody.innerHTML = "";
+
+            fileList.forEach(function (file) {
+                let tr = document.createElement("tr");
+                let td1 = document.createElement("td");
+                td1.textContent = file.name;
+                tr.appendChild(td1);
+                let td2 = document.createElement("td");
+                td2.textContent = fileSizeH(file.size);
+                td2.className = 'td-size';
+                tr.appendChild(td2);
+                tBody.appendChild(tr);
+            });
+        }, 100);
+    }
+
+    function fileSizeH(size) {
+        let kbUnit = size / 1024;
+        var unit = 'KB';
+        if (kbUnit > 1024) {
+            kbUnit /= 1024;
+            unit = 'MB';
+        }
+        return parseFloat(kbUnit).toFixed(2) + unit;
+    }
+</script>
+
+
+</body>
+</html>
