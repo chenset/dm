@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>番剧弹幕与字幕转换</title>
-    <!--    <script src="/js/get.js"></script>-->
-
     <!--
 
     // F12 console 控制台中执行
     window.fs1d3f = document.createElement('script');
-    window.fs1d3f.src = "https://b.flysay.com/js/get.js?"+(+new Date());
+    window.fs1d3f.src = "https://str.flysay.com/js/get.js?"+(+new Date());
     document.body.appendChild(window.fs1d3f);
     window.fs1d3f.onload = function () {
         window.fs1d3f.onload = null;
@@ -173,11 +171,9 @@
 </head>
 <body>
 
-
 <div style="display:none;position:fixed;z-index: 999;width: 100%;height: 100%;background: none;" id="layer">
     <div class="lds-dual-ring" id="loading"></div>
 </div>
-
 
 <div class="container" id="drop-zone">
     <br>
@@ -214,7 +210,6 @@
             }
         });
 
-
         function getBilibiliDanMu(doNotDownload, callback) {
             let input = document.getElementById('bilibili-url-input');
             if (input.value.trim() === '') {
@@ -241,7 +236,7 @@
                         window.bilibiliFiles.push(new File([item.content], item.fileName));
                     });
 
-                    console.log('已经获取' + window.bilibiliFiles.length + "个弹幕");
+                    document.getElementById('log-output').innerText = '已经获取' + window.bilibiliFiles.length + "个弹幕";
                     callback && callback();
                     document.getElementById('layer').style.display = "none";
                 },
@@ -279,10 +274,11 @@
     <br>
     <h2># <span style="">字幕&弹幕</span>合并</h2>
     <br>
-    某些播放器的字幕防遮挡功能会导致双字幕时出现字幕上移, 使用合并功能后就会成为一个单独的字幕文件
+    仅支持Potplayer, 某些播放器的字幕防遮挡功能会导致双字幕时出现字幕上移, 使用合并功能后就会成为一个单独的字幕文件
     <br>
     <br>
     <button class="btn" id="merge-btn">点击合并</button>
+
     <script>
         document.getElementById('merge-btn').addEventListener('click', function (e) {
             mergeBtnTriggerHandler()
@@ -296,8 +292,8 @@
                         document.getElementById('layer').style.display = "none";
                     });
                 }, function (err) {
-                    alert(err);
                     document.getElementById('layer').style.display = "none";
+                    document.getElementById('log-output').innerText = err;
                 });
             } else if (fileList.length && document.getElementById('bilibili-url-input').value !== "") {
                 getBilibiliDanMu(true, function () {
@@ -306,8 +302,8 @@
                             document.getElementById('layer').style.display = "none";
                         });
                     }, function (err) {
-                        alert(err);
                         document.getElementById('layer').style.display = "none";
+                        document.getElementById('log-output').innerText = err;
                     });
                 });
             } else if (fileList.length) {
@@ -319,16 +315,16 @@
                     document.getElementById('layer').style.display = "none";
                 });
             } else {
-                alert("合并前需要先选择弹幕与字幕");
+                document.getElementById('log-output').innerText = '合并前需要先选择弹幕与字幕';
                 document.getElementById('layer').style.display = "none";
             }
         }
     </script>
 </div>
 
-<!--<footer style="position: fixed;bottom:20px;left:0;width:100%;text-align: center">-->
-<!--<a href="https://github.com/chenset/subtitle-file-rename" target="_blank" style="color: #41B883;">GitHub</a>-->
-<!--</footer>-->
+<footer style="position: fixed;bottom:20px;left:0;width:100%;text-align: center">
+    <span id="log-output" style="color: #ff433f"><a href="https://github.com/chenset/dm" target="_blank" style="color: #41B883;">GitHub</a></span>
+</footer>
 
 <script async defer src="./js/JSZip/jszip.min.js"></script>
 <script async defer src="./js/JSZipUtils/jszip-utils.min.js"></script>
@@ -571,7 +567,7 @@
             saveAs(blob, "flysay.com" + ".zip");
             callback && callback()
         }, function (err) {
-            alert(err);
+            document.getElementById('log-output').innerText = err;
         });
     }
 

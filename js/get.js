@@ -9,27 +9,22 @@ window._run__script_ = function (option) {
     option.holdTimePos = option.holdTimePos || 6;
     option.fontAlpha = option.fontAlpha || "88";// 00 ~ FF
 
-    // option.offset = option.offset || 0.0000;
-
     //弹幕出现时间偏移设置. 正数提前, 负数延后.
     option.offset = parseFloat(option.offset);
     if (isNaN(option.offset)) {
         option.offset = 0.000;
     }
 
-    // console.log(option);
-    // return;
-
-    //todo 避免重复加载
     //https://github.com/Stuk/jszip 用于zip打包多个文件
     loadScript("https://str.flysay.com/js/JSZip/jszip.min.js", function () {
-        //todo 切换CDN源
         loadScript("https://str.flysay.com/js/FileSaver/FileSaver.js", function () {
             start();
         });
     });
 
     function start() {
+        document.getElementById('log-output').innerText = "开始解析地址";
+
         // 获取番剧标题
         ajax({
             url: option.proxy + option.url,
@@ -37,6 +32,9 @@ window._run__script_ = function (option) {
                 let titleRegex = new RegExp(/<meta\sname="keywords"\s+content="([^"]+)"/);
                 let titleRes = titleRegex.exec(res.responseText);
                 if (!titleRes) {
+
+                    document.getElementById('layer').style.display = "none";
+                    document.getElementById('log-output').innerText = "无法获取标题, 需确定当前链接为番剧播放页面";
                     throw "无法获取标题, 需确定当前链接为番剧播放页面"
                 }
 
@@ -47,7 +45,7 @@ window._run__script_ = function (option) {
                     let epJson = JSON.parse(epListRes[1]);
                     for (let i in epJson) {
                         if (option.trySkip && parseInt(epJson[i]["title"]) != epJson[i]["title"]) {
-                            console.log("跳过特殊集:" + epJson[i]["longTitle"]);
+                            document.getElementById('log-output').innerText = "跳过特殊集:" + epJson[i]["longTitle"];
                             continue;
                         }
 
@@ -58,57 +56,55 @@ window._run__script_ = function (option) {
                             longTitle: epJson[i]["longTitle"].replace(/\//ig, '-'), //longTitle为"教科书\u002F催眠术\u002F睡醒\u002F打水漂"这种格式在zip打包时会生成层级目录, 所以使用了String.replace()
                         })
                     }
-                    console.log('弹幕下载中..');
+                    document.getElementById('log-output').innerText = '开始下载' + epList.length + '个弹幕';
                     getDanMu(titleRes[1], epList);
                 } else {
+                    document.getElementById('log-output').innerText = '无法从HTML中获取内容';
+                    document.getElementById('layer').style.display = "none";
                     throw "无法获取内容";
                 }
+            }, error: function (err) {
+                document.getElementById('log-output').innerText = '无法从远程地址中获取内容';
+                document.getElementById('layer').style.display = "none";
+                console.log(err);
+                throw "无法从远程地址中获取内容";
             }
         });
-    }
-
-    function loadScript(src, callback) {
-        let loadedScript = document.querySelectorAll('head script');
-        for (let i = 0; i < loadedScript.length; i++) {
-            if (loadedScript[i].src === src) {
-                callback && callback();
-                return;
-            }
-        }
-
-        let script = document.createElement('script');
-        script.onload = function () {
-            script.onload = null;
-            callback && callback();
-        };
-        script.src = src;
-        document.getElementsByTagName('head')[0].appendChild(script);
     }
 
     function getDanMu(title, epList) {
         let stringJson = [];
         epList.forEach(function (item) {
             ajax({
-                url: option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
+                url:  option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
                 success: function (res) {
-                    // let secondTitle = '' + (parseInt(item.i) + 1);
+                    let fileName = title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass";
+
+                    document.getElementById('log-output').innerText = '开始转换: ' + fileName;
+
                     stringJson.push({
                         "content": handleXml(res.responseXML),
                         "i": item.i,
                         "title": item.title,
                         "longTitle": item.longTitle,
-                        "fileName": title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass",
+                        "fileName": fileName,
                     });
+
                     if (epList.length === stringJson.length) {
                         stringJson.sort(dmSortCompare); // 根据集数排序
 
                         if (!option.doNotDownload) {
-                            console.log('转换成功, 打包下载');
+                            document.getElementById('log-output').innerText = '转换成功, 正在打包下载';
                             download(title, stringJson, option.callback);
                         } else {
                             option.callback && option.callback(title, stringJson);
                         }
                     }
+                }, error: function (err) {
+                    document.getElementById('log-output').innerText = '无法从远程地址中获取弹幕';
+                    document.getElementById('layer').style.display = "none";
+                    console.log(err);
+                    throw "无法从远程地址中获取弹幕";
                 }
             });
         });
@@ -123,6 +119,9 @@ window._run__script_ = function (option) {
             saveAs(blob, title + ".zip");
             callback && callback(title, stringResult)
         }, function (err) {
+
+            document.getElementById('layer').style.display = "none";
+            document.getElementById('log-output').innerText = '下载失败';
             throw err;
         });
     }
@@ -276,6 +275,24 @@ window._run__script_ = function (option) {
         });
 
         return assFile;
+    }
+
+    function loadScript(src, callback) {
+        let loadedScript = document.querySelectorAll('head script');
+        for (let i = 0; i < loadedScript.length; i++) {
+            if (loadedScript[i].src === src) {
+                callback && callback();
+                return;
+            }
+        }
+
+        let script = document.createElement('script');
+        script.onload = function () {
+            script.onload = null;
+            callback && callback();
+        };
+        script.src = src;
+        document.getElementsByTagName('head')[0].appendChild(script);
     }
 
     function ajax(option) {
