@@ -31,7 +31,7 @@
 
         .container {
             margin: 0 auto;
-            max-width: 1200px;
+            max-width: 900px;
             padding: 0 15px;
         }
 
@@ -56,7 +56,7 @@
         }
 
         .rename-wrap, .convert-wrap {
-            margin: 40px 0;
+            margin: 20px 0;
             position: relative;
         }
 
@@ -177,20 +177,20 @@
 
 <div class="container" id="drop-zone">
     <br>
-    <h2># B站弹幕转换</h2>
+    <h3># B站弹幕转换</h3>
     <br>
     <label for="try-skip">
         <input type="checkbox" id="try-skip" value="1"> 尝试跳过特殊集. 如"11.5","总集篇","SP"这类
     </label>
     <br>
     <label for="offset">
-        <input type="text" id="offset" value="" placeholder="0.0000"> 弹幕出现时间偏移设置. 正数提前, 负数延后.
+        <input type="text" id="offset" value="" placeholder="0.0000" style="width: 50px"> 弹幕出现时间偏移设置. 正数提前, 负数延后.
     </label>
     <div class="convert-wrap">
         <input type="text" value="" id="bilibili-url-input"
                placeholder="https://www.bilibili.com/bangumi/play/ep278219">
         <button type="button" id="convert-btn" class="btn">
-            回车下载弹幕
+            下载弹幕
         </button>
     </div>
     <script>
@@ -243,20 +243,19 @@
             });
         }
     </script>
-
     <br>
-    <h2># <span style="">字幕</span>批量改名</h2>
+    <h3># <span style="">字幕</span>批量改名</h3>
     <br>
 
     <label for="rename-start-index">
-        <input type="text" value="1" name="rename-start-index" id="rename-start-index"> 替换符"#"第一集的序号. 有的集数是从0集开始的,
+        <input type="text" value="1" name="rename-start-index" id="rename-start-index" style="width: 50px"> 替换符"#"第一集的序号. 有的集数是从0集开始的,
         就需要把这个值设置为0. 如 Fate UBW
     </label>
     <div class="rename-wrap">
         <input type="text" value="" name="rename" id="rename"
                placeholder='新的文件名, "#"为序号替换符. 一般使用"##"来替换12集的字幕文件'>
         <button type="button" id="download" class="btn">
-            回车键下载字幕
+            下载字幕
         </button>
     </div>
     <div class="selector-wrap">
@@ -272,7 +271,7 @@
     </table>
 
     <br>
-    <h2># <span style="">字幕&弹幕</span>合并</h2>
+    <h3># <span style="">字幕&弹幕</span>合并</h3>
     <br>
     仅支持Potplayer, 某些播放器的字幕防遮挡功能会导致双字幕时出现字幕上移, 使用合并功能后就会成为一个单独的字幕文件
     <br>
