@@ -308,6 +308,7 @@ window._run__script_ = function (option) {
             error = option.error;
 
         let xhr = new XMLHttpRequest();
+        xhr.timeout = timeout;
         xhr.onreadystatechange = function () {
             if (this.readyState === 4) {
                 if (this.status === 200 || this.status === 304) {
