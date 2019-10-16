@@ -80,6 +80,7 @@ window._run__script_ = function (option) {
         let itemIndex = 0;
         epList.forEach(function (item) {
             ajax({
+                timeout: 1200000,
                 url: option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
                 success: function (res) {
                     let fileName = title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass";
@@ -302,6 +303,7 @@ window._run__script_ = function (option) {
             method = option.method || 'GET',
             data = option.data,
             headers = option.headers || {},
+            timeout = option.timeout || 60000,
             success = option.success,
             error = option.error;
 
