@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>番剧弹幕与字幕转换</title>
+    <title>SUBTITLE</title>
+    <link rel="icon" href="https://cdn.jsdelivr.net/gh/chenset/subtitle/favicon.ico" type="image/x-icon">
     <!--
 
     // F12 console 控制台中执行
@@ -349,10 +350,10 @@
     </div>
 </footer>
 
-<script async defer src="./js/JSZip/jszip.min.js"></script>
-<script async defer src="./js/JSZipUtils/jszip-utils.min.js"></script>
-<script async defer src="./js/FileSaver/FileSaver.js"></script>
-<script src="./js/Sortable/Sortable.min.js"></script>
+<script async defer src="https://cdn.jsdelivr.net/gh/chenset/subtitle/js/JSZip/jszip.min.js"></script>
+<script async defer src="https://cdn.jsdelivr.net/gh/chenset/subtitle/js/JSZipUtils/jszip-utils.min.js"></script>
+<script async defer src="https://cdn.jsdelivr.net/gh/chenset/subtitle/js/FileSaver/FileSaver.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/chenset/subtitle/js/Sortable/Sortable.min.js"></script>
 
 <script>
     Sortable.create(document.getElementById('tbody'), {
@@ -651,13 +652,19 @@
         doc.innerHTML = doc.innerHTML + '<br>' + msg;
         doc.scrollTop = doc.scrollHeight;
     }
-</script>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-71822351-1"></script>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'UA-71822351-1');
+
+    setTimeout(function () {
+        loadScript("https://www.googletagmanager.com/gtag/js?id=UA-71822351-1", function () {
+            window.dataLayer = window.dataLayer || [];
+
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+
+            gtag('js', new Date());
+            gtag('config', 'UA-71822351-1');
+        });
+    }, 200);
 </script>
 </body>
 </html>
