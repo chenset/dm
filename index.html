@@ -62,8 +62,9 @@
         }
 
         #rename, #bilibili-url-input {
-            padding: 9px;
+            padding-left: 9px;
             width: 100%;
+            height: 40px;
         }
 
         input[type=text] {
@@ -72,7 +73,8 @@
         }
 
         .btn {
-            padding: 9px;
+            padding: 0 9px 0;
+            height: 38px;
             background: #f3f3f3;
             color: #41B883;
             cursor: pointer;
@@ -153,7 +155,9 @@
 
     <script>
 
-        loadScript("/js/get.js?" + (+new Date()));
+        loadScript("/js/get.js");
+
+        // loadScript("/js/get.js?" + (+new Date()));
 
         function loadScript(src, callback) {
             let loadedScript = document.querySelectorAll('head script');
@@ -183,14 +187,14 @@
 <div class="container" id="drop-zone">
     <br>
     <h3># B站弹幕转换</h3>
-    <br>
-    <label for="try-skip">
-        <input type="checkbox" id="try-skip" value="1"> 尝试跳过特殊集. 如"11.5","总集篇","SP"这类
-    </label>
-    <br>
-    <label for="offset">
-        <input type="text" id="offset" value="" placeholder="0.0000" style="width: 50px"> 弹幕出现时间偏移设置. 正数提前, 负数延后.
-    </label>
+        <br>
+        <label for="try-skip">
+            <input type="checkbox" id="try-skip" value="1"> 尝试跳过特殊集. 如"11.5","总集篇","SP"这类
+        </label>
+        <br>
+        <label for="offset">
+            <input type="text" id="offset" value="" placeholder="0.0000" style="width: 50px"> 弹幕出现时间偏移设置. 正数提前, 负数延后.
+        </label>
     <div class="convert-wrap">
         <input type="text" value="" id="bilibili-url-input"
                placeholder="https://www.bilibili.com/bangumi/play/ep278219">
@@ -256,13 +260,13 @@
     </script>
     <br>
     <h3># <span style="">字幕</span>批量改名</h3>
-    <br>
+        <br>
 
-    <label for="rename-start-index">
-        <input type="text" value="1" name="rename-start-index" id="rename-start-index" style="width: 50px">
-        替换符"#"第一集的序号. 有的集数是从0集开始的,
-        就需要把这个值设置为0. 如 Fate UBW
-    </label>
+        <label for="rename-start-index">
+            <input type="text" value="1" name="rename-start-index" id="rename-start-index" style="width: 50px">
+            替换符"#"第一集的序号. 有的集数是从0集开始的,
+            就需要把这个值设置为0. 如 Fate UBW
+        </label>
     <div class="rename-wrap">
         <input type="text" value="" name="rename" id="rename"
                placeholder='新的文件名, "#"为序号替换符. 一般使用"##"来替换12集的字幕文件'>
@@ -285,9 +289,9 @@
     <br>
     <h3># <span style="">字幕&弹幕</span>合并</h3>
     <br>
-    仅支持Potplayer, 某些播放器的字幕防遮挡功能会导致双字幕时出现字幕上移, 使用合并功能后就会成为一个单独的字幕文件
-    <br>
-    <br>
+        仅支持Potplayer, 某些播放器的字幕防遮挡功能会导致双字幕时出现字幕上移, 使用合并功能后就会成为一个单独的字幕文件
+        <br>
+        <br>
     <button class="btn" id="merge-btn">点击合并</button>
     <br>
     <br>
@@ -344,10 +348,8 @@
 </div>
 
 <footer style="position: fixed;bottom:20px;left:0;width:100%;text-align: center">
-    <div id="log-output" style="color:#c3c3c3;max-height: 75px;overflow:hidden;text-align: left" class="container">
-        <a href="https://github.com/chenset/dm" target="_blank"
-           style="color: #41B883;text-align: center;display: block">GitHub</a>
-    </div>
+    <div id="log-output" style="color:#c3c3c3;max-height: 75px;overflow:hidden;text-align: left"
+         class="container"></div>
 </footer>
 
 <script async defer src="https://cdn.jsdelivr.net/gh/chenset/subtitle/js/JSZip/jszip.min.js"></script>
@@ -495,9 +497,7 @@
             bilibiliReader.onload = function (e) {
                 bilibiliReader.onload = null;
 
-                //todo 但字幕数量不对其时的处理
                 if (fileList.hasOwnProperty(index)) {
-
                     let bilibiliContent = e.target.result;
                     let subReader = new FileReader();
                     subReader.onload = function (e) {
