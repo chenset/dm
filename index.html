@@ -154,7 +154,8 @@
             color: #41B883;
             text-align: right
         }
-        td{
+
+        td {
             padding: 2px;
         }
     </style>
@@ -203,8 +204,8 @@
                 <td><label for="offset">弹幕出现时间偏移设置. 正数提前, 负数延后. 跳过Aniplex片头一般填4.5</label></td>
             </tr>
             <tr>
-                <td><input type="text" id="font-size" value="18" style="width: 50px"></td>
-                <td><label for="offset">弹幕字体大小, 默认18.</label></td>
+                <td><input type="text" id="font-size" value="17" style="width: 50px"></td>
+                <td><label for="offset">弹幕字体大小, 默认17.</label></td>
             </tr>
             <tr>
                 <td><input type="text" id="move-speed" value="21" style="width: 50px"></td>
@@ -254,11 +255,11 @@
                 proxy: 'https://request.flysay.com/',
                 doNotDownload: doNotDownload,
                 trySkip: document.getElementById('try-skip').checked,
-                offset: document.getElementById('offset').value,
+                offset: parseFloat(document.getElementById('offset').value),
                 playResX: 1920,
                 playResY: 1080,
-                fontSize: document.getElementById('font-size').value,
-                holdTimeMove: document.getElementById('move-speed').value,
+                fontSize: parseFloat(document.getElementById('font-size').value),
+                holdTimeMove: parseFloat(document.getElementById('move-speed').value),
                 holdTimePos: 6,
                 fontAlpha: "88",// 00 ~ FF
                 logging: logging,
