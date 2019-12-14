@@ -180,7 +180,6 @@ window._run__script_ = function (option) {
         let holdTimePos = option.holdTimePos;
         let alpha = option.fontAlpha;// 00 ~ FF
 
-
         // *颜色格式：&Haabbggrr，均为十六进制，取值0-F。
         // 前2位(alpha)为透明度，00=不透明，FF=DEC255=全透明；后6是BGR蓝绿红颜色。 排在最前的00可以忽略不写, 如：{\c&HFF&}={\c&H0000FF&}为纯红色、&HFFFFFF=纯白色、&HC8000000=透明度为200的黑色。
 
@@ -228,7 +227,12 @@ window._run__script_ = function (option) {
             let startTime = Math.floor((time / 3600) % 24) + ":" + Math.floor((time / 60) % 60) + ":" + (time % 60).toFixed(2);
             let color = "";
             if (parseInt(attr[3]) !== 16777215) { // 16777215 白色
-                color = '\\c&H' + RRGGBB(parseInt(attr[3], 10) & 0xffffff).split(/(..)/).reverse().join('');
+                //非白色时单独设置字体样式
+                let hexColor = RRGGBB(parseInt(attr[3], 10) & 0xffffff).split(/(..)/).reverse().join('')
+                color += '\\c&H' + hexColor; //PrimaryColour
+                if (isDarkColor(hexColor)) {
+                    color += '\\3c&HEEEEEE' //OutlineColor
+                }
             }
 
             if (mode[attr[1]] === "TopMode1") {
@@ -327,5 +331,24 @@ window._run__script_ = function (option) {
         } else {
             xhr.send();
         }
+    }
+
+
+    function isDarkColor(hexColor) {
+        let r, g, b, hsp;
+
+        hexColor = +("0x" + hexColor.slice(1).replace(
+            hexColor.length < 5 && /./g, '$&$&'));
+
+        r = hexColor >> 16;
+        g = hexColor >> 8 & 255;
+        b = hexColor & 255;
+
+        hsp = Math.sqrt(
+            0.299 * (r * r) +
+            0.587 * (g * g) +
+            0.114 * (b * b)
+        );
+        return hsp < 100
     }
 };
