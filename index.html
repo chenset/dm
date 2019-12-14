@@ -655,6 +655,7 @@
     }
 
     function logging(msg) {
+        console.log(new Date().toLocaleTimeString() + ": " + msg);
         let doc = document.getElementById('log-output');
         doc.innerHTML = doc.innerHTML + '<br>' + msg;
         doc.scrollTop = doc.scrollHeight;

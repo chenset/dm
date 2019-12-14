@@ -83,11 +83,21 @@ window._run__script_ = function (option) {
                 timeout: 1200000,
                 url: option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
                 success: function (res) {
+                    let xmlObj = res.responseXML;
+                    if (!res.responseXML) {
+                        logging("再次尝试解析XML: " + res.responseURL);
+                        xmlObj = new DOMParser().parseFromString(res.responseText, "text/xml");
+                    }
+                    if (!xmlObj) {
+                        alert("无法从该URL获取弹幕, F12控制台查看错误: \n" + res.responseURL);
+                        return
+                    }
+
                     let fileName = title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass";
 
                     option.logging('开始转换(' + (++itemIndex) + '/' + epList.length + '): ' + fileName);
                     stringJson.push({
-                        "content": handleXml(res.responseXML),
+                        "content": handleXml(xmlObj),
                         "i": item.i,
                         "title": item.title,
                         "longTitle": item.longTitle,
@@ -321,6 +331,14 @@ window._run__script_ = function (option) {
                     error && error(this);
                 }
             }
+        };
+        xhr.ontimeout = function () {
+            alert("Request Timeout");
+            logging("网络请求超时, 请重试")
+        };
+        xhr.onerror = function () {
+            alert("Response error");
+            logging("响应错误")
         };
         xhr.open(method, url, true);
         for (let k in headers) {
