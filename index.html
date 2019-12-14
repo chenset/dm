@@ -196,20 +196,24 @@
     <div id="bilibili-option-wrap" class="option-wrap">
         <table>
             <tr>
-                <td><input type="checkbox" id="try-skip" value="1"></td>
-                <td><label for="try-skip">尝试跳过特殊集. 如"11.5","总集篇","SP"这类</label></td>
+                <td><input type="text" id="font-size" value="17" style="width: 50px"></td>
+                <td><label for="font-size">弹幕字体大小, 默认17.</label></td>
+            </tr>
+            <tr>
+                <td><input type="text" id="font-opacity" value="88" style="width: 50px"></td>
+                <td><label for="font-opacity">字体透明度,范围: 00~FF. 00为不透明, 16进制. 如:11,66,AA,CC</label></td>
             </tr>
             <tr>
                 <td><input type="text" id="offset" value="0.00" style="width: 50px"></td>
                 <td><label for="offset">弹幕出现时间偏移设置. 正数提前, 负数延后. 跳过Aniplex片头一般填4.5</label></td>
             </tr>
             <tr>
-                <td><input type="text" id="font-size" value="17" style="width: 50px"></td>
-                <td><label for="offset">弹幕字体大小, 默认17.</label></td>
+                <td><input type="text" id="move-speed" value="21" style="width: 50px"></td>
+                <td><label for="move-speed">弹幕移动速度, 数值越大越慢.</label></td>
             </tr>
             <tr>
-                <td><input type="text" id="move-speed" value="21" style="width: 50px"></td>
-                <td><label for="offset">弹幕移动速度, 数值越大越慢.</label></td>
+                <td><input type="checkbox" id="try-skip" value="1"></td>
+                <td><label for="try-skip">尝试跳过特殊集. 如"11.5","总集篇","SP"这类</label></td>
             </tr>
         </table>
     </div>
@@ -261,7 +265,7 @@
                 fontSize: parseFloat(document.getElementById('font-size').value),
                 holdTimeMove: parseFloat(document.getElementById('move-speed').value),
                 holdTimePos: 6,
-                fontAlpha: "88",// 00 ~ FF
+                fontAlpha: document.getElementById('font-opacity').value,// 00 ~ FF
                 logging: logging,
                 hiddenLoading: hiddenLoading,
                 callback: function (title, list) {
