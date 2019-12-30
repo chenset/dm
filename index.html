@@ -488,8 +488,9 @@
                     let fontSizeRes = line.match(/,\s?(\d+)\s?,/);
                     if (!!fontSizeRes) {
                         let fontSize = fontSizeRes[1] * resTimes;
-                        if (fontSize > 65) {
-                            fontSize *= 0.85//默认都太大了
+                        if (fontSize > 50) {
+                            fontSize = 50;//默认都太大了
+                            // fontSize *= 0.85//默认都太大了
                         }
                         line = line.replace(/,\s?\d+\s?,/, ',' + Math.floor(fontSize) + ',');
                     }
