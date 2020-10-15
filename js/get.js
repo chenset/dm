@@ -19,8 +19,8 @@ window._run__script_ = function (option) {
     }
 
     //https://github.com/Stuk/jszip 用于zip打包多个文件
-    loadScript("https://cdn.jsdelivr.net/gh/chenset/subtitle/js/JSZip/jszip.min.js", function () {
-        loadScript("https://cdn.jsdelivr.net/gh/chenset/subtitle/js/FileSaver/FileSaver.js", function () {
+    loadScript("/js/JSZip/jszip.min.js", function () {
+        loadScript("/js/FileSaver/FileSaver.js", function () {
             start();
         });
     });
