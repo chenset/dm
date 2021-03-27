@@ -182,7 +182,7 @@ window._run__script_ = function (option) {
     }
 
     function handleXml(res) {
-        let mode = [undefined, 'RightMode1', 'RightMode1', 'RightMode1', 'TopMode1', 'TopMode1'];
+        let mode = ['RightMode1', 'RightMode1', 'RightMode1', 'RightMode1', 'TopMode1', 'TopMode1', 'RightMode1', 'RightMode1'];
         let PlayResX = option.playResX;
         let PlayResY = option.playResY;
         let fontSize = option.fontSize;
