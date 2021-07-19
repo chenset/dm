@@ -28,6 +28,17 @@ window._run__script_ = function (option) {
     function start() {
         option.logging('开始解析地址');
 
+        if (parseInt(option.url) == option.url) {
+            option.logging('尝试使用弹幕ID(cid)下载');
+            getDanMu(option.url, [{
+                i: 1,
+                title: option.url,
+                cid: option.url,
+                longTitle: option.url.replace(/\//ig, '-'), //longTitle为"教科书\u002F催眠术\u002F睡醒\u002F打水漂"这种格式在zip打包时会生成层级目录, 所以使用了String.replace()
+            }]);
+            return
+        }
+
         // 获取番剧标题
         ajax({
             url: option.proxy + option.url,
@@ -35,11 +46,18 @@ window._run__script_ = function (option) {
                 let titleRegex = new RegExp(/<meta\sname="keywords"\s+content="([^"]+)"/);
                 let titleRes = titleRegex.exec(res.responseText);
                 if (!titleRes) {
-
-                    option.hiddenLoading();
-                    option.logging('无法获取标题, 需确定当前链接为番剧播放页面');
-                    throw "无法获取标题, 需确定当前链接为番剧播放页面"
+                    //retry
+                    option.logging('非番剧播放页面, 尝试获取普通视频弹幕');
+                    let titleRegex = new RegExp(/<title\s[^>]*>([^<]+)</);
+                    let titleRes = titleRegex.exec(res.responseText);
+                    if (!titleRes) {
+                        option.hiddenLoading();
+                        option.logging('无法获取标题, 需确定当前链接为番剧播放页面');
+                        throw "无法获取标题, 需确定当前链接为番剧播放页面"
+                    }
                 }
+
+                let title = titleRes[1];
 
                 // 获取番剧的播放列表
                 let epList = [];
@@ -60,11 +78,24 @@ window._run__script_ = function (option) {
                         })
                     }
                     option.logging('开始下载' + epList.length + '个弹幕');
-                    getDanMu(titleRes[1], epList);
+                    getDanMu(title, epList);
                 } else {
-                    option.logging('无法从HTML中获取内容');
-                    option.hiddenLoading();
-                    throw "无法获取内容";
+                    //retry
+                    let epListRes = new RegExp(/"cid":(\d+),/).exec(res.responseText)
+                    if (!!epListRes && epListRes.length) {
+                        epList.push({
+                            i: 1,
+                            title: title,
+                            cid: epListRes[1],
+                            longTitle: title.replace(/\//ig, '-'), //longTitle为"教科书\u002F催眠术\u002F睡醒\u002F打水漂"这种格式在zip打包时会生成层级目录, 所以使用了String.replace()
+                        })
+                        option.logging('开始下载' + epList.length + '个弹幕');
+                        getDanMu(title, epList);
+                    } else {
+                        option.logging('无法从HTML中获取内容');
+                        option.hiddenLoading();
+                        throw "无法获取内容";
+                    }
                 }
             }, error: function (err) {
                 option.logging('无法从远程地址中获取内容');
