@@ -81,7 +81,7 @@ window._run__script_ = function (option) {
                     getDanMu(title, epList);
                 } else {
                     //retry
-                    let epListRes = new RegExp(/"cid":(\d+),/).exec(res.responseText)
+                    let epListRes = new RegExp(/"cid":(\d+)/).exec(res.responseText)
                     if (!!epListRes && epListRes.length) {
                         epList.push({
                             i: 1,
