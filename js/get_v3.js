@@ -17,7 +17,8 @@ o.addEventListener("load", (function () {
         const elems = message.decode(payload).elems;
         if (elems) {
             for (let i = 0; i < elems.length; i++) {
-                if (elems[i].mode == 5){
+                // if (elems[i] instanceof DanmakuElem) {
+                if (elems[i].progress < 100) {
                     console.log(elems[i])
                 }
             }

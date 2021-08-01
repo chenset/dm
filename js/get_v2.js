@@ -18,10 +18,15 @@ window._run__script_ = function (option) {
         option.offset = 0.000;
     }
 
+    let message = null;
+
     //https://github.com/Stuk/jszip 用于zip打包多个文件
     loadScript("/js/JSZip/jszip.min.js", function () {
         loadScript("/js/FileSaver/FileSaver.js", function () {
-            start();
+            loadScript("/js/protobuf.min.js", function () {
+                message = protobuf.Root.fromJSON(JSON.parse('{"nested":{"bilibili":{"nested":{"community":{"nested":{"service":{"nested":{"dm":{"nested":{"v1":{"nested":{"DmWebViewReply":{"fields":{"state":{"type":"int32","id":1},"text":{"type":"string","id":2},"textSide":{"type":"string","id":3},"dmSge":{"type":"DmSegConfig","id":4},"flag":{"type":"DanmakuFlagConfig","id":5},"specialDms":{"rule":"repeated","type":"string","id":6},"checkBox":{"type":"bool","id":7},"count":{"type":"int64","id":8},"commandDms":{"rule":"repeated","type":"CommandDm","id":9},"dmSetting":{"type":"DanmuWebPlayerConfig","id":10},"reportFilter":{"rule":"repeated","type":"string","id":11}}},"CommandDm":{"fields":{"oid":{"type":"int64","id":2},"mid":{"type":"int64","id":3},"command":{"type":"string","id":4},"content":{"type":"string","id":5},"progress":{"type":"int32","id":6},"ctime":{"type":"string","id":7},"mtime":{"type":"string","id":8},"extra":{"type":"string","id":9},"dmid":{"type":"string","id":10}}},"DmSegConfig":{"fields":{"pageSize":{"type":"int64","id":1},"total":{"type":"int64","id":2}}},"DanmakuFlagConfig":{"fields":{"recFlag":{"type":"int32","id":1},"recText":{"type":"string","id":2},"recSwitch":{"type":"int32","id":3}}},"DmSegMobileReply":{"fields":{"elems":{"rule":"repeated","type":"DanmakuElem","id":1}}},"DanmakuElem":{"fields":{"progress":{"type":"int32","id":2},"mode":{"type":"int32","id":3},"fontsize":{"type":"int32","id":4},"color":{"type":"uint32","id":5},"midHash":{"type":"string","id":6},"content":{"type":"string","id":7},"ctime":{"type":"int64","id":8},"weight":{"type":"int32","id":9},"action":{"type":"string","id":10},"pool":{"type":"int32","id":11},"dmid":{"type":"string","id":12},"attr":{"type":"int32","id":13}}},"DanmuWebPlayerConfig":{"fields":{"dmSwitch":{"type":"bool","id":1},"aiSwitch":{"type":"bool","id":2},"aiLevel":{"type":"int32","id":3},"typeTop":{"type":"bool","id":4},"typeScroll":{"type":"bool","id":5},"typeBottom":{"type":"bool","id":6},"typeColor":{"type":"bool","id":7},"typeSpecial":{"type":"bool","id":8},"preventshade":{"type":"bool","id":9},"dmask":{"type":"bool","id":10},"opacity":{"type":"float","id":11},"dmarea":{"type":"int32","id":12},"speedplus":{"type":"float","id":13},"fontsize":{"type":"float","id":14},"fullscreensync":{"type":"bool","id":15},"speedsync":{"type":"bool","id":16},"fontfamily":{"type":"string","id":17},"bold":{"type":"bool","id":18},"fontborder":{"type":"int32","id":19}}}}}}}}}}}}}}}')).lookupType("bilibili.community.service.dm.v1.DmSegMobileReply");
+                start();
+            });
         });
     });
 
@@ -112,23 +117,45 @@ window._run__script_ = function (option) {
         epList.forEach(function (item) {
             ajax({
                 timeout: 1200000,
-                url: option.proxy + "https://api.bilibili.com/x/v1/dm/list.so?oid=" + item.cid,
+                // url: option.proxy + "https://api.bilibili.com/x/v2/dm/web/seg.so?type=1&oid=" + item.cid + "&segment_index=1",
+                url: "https://str.flysay.com/seg.so",
+                responseType: "arraybuffer",
                 success: function (res) {
-                    let xmlObj = res.responseXML;
-                    if (!res.responseXML) {
-                        logging("再次尝试解析XML: " + res.responseURL);
-                        xmlObj = new DOMParser().parseFromString(res.responseText, "text/xml");
+                    let payload = new Uint8Array(res.response);
+                    console.log(payload)
+                    const err = message.verify(payload);
+                    if (err) {
+                        option.logging("解码失败. 无法从该URL获取弹幕, F12控制台查看错误: \n" + res.responseURL);
+                        console.log(err)
+                        throw err
                     }
-                    if (!xmlObj) {
-                        alert("无法从该URL获取弹幕, F12控制台查看错误: \n" + res.responseURL);
-                        return
-                    }
+
+                    // const elems = message.decode(payload).elems;
+                    // if (elems) {
+                    //     for (let i = 0; i < elems.length; i++) {
+                    //         if (elems[i].mode == 5) {
+                    //             console.log(elems[i])
+                    //         }
+                    //     }
+                    // }
+
+
+                    // let xmlObj = res.responseXML;
+                    // if (!res.responseXML) {
+                    //     logging("再次尝试解析XML: " + res.responseURL);
+                    //     xmlObj = new DOMParser().parseFromString(res.responseText, "text/xml");
+                    // }
+                    // if (!xmlObj) {
+                    //     alert("无法从该URL获取弹幕, F12控制台查看错误: \n" + res.responseURL);
+                    //     return
+                    // }
 
                     let fileName = title + " " + (item.title.padStart(('' + (epList.length < 2 ? '00' : epList.length)).length, "0")) + " " + item.longTitle + ".ass";
 
                     option.logging('开始转换(' + (++itemIndex) + '/' + epList.length + '): ' + fileName);
+                    console.log(message.decode(payload))
                     stringJson.push({
-                        "content": handleXml(xmlObj),
+                        "content": handleMessage(message.decode(payload)),
                         "i": item.i,
                         "title": item.title,
                         "longTitle": item.longTitle,
@@ -200,8 +227,10 @@ window._run__script_ = function (option) {
     }
 
     function nodeSortCompare(a, b) {
-        let aTime = parseFloat(a.getAttribute("p").split(",")[0]);
-        let bTime = parseFloat(b.getAttribute("p").split(",")[0]);
+        // let aTime = parseFloat(a.getAttribute("p").split(",")[0]);
+        // let bTime = parseFloat(b.getAttribute("p").split(",")[0]);
+        const aTime = a.progress
+        const bTime = b.progress
 
         if (aTime < bTime) {
             return -1;
@@ -212,7 +241,13 @@ window._run__script_ = function (option) {
         return 0;
     }
 
-    function handleXml(res) {
+    function handleMessage(message) {
+        if (!message.elems) {
+            return
+        }
+        let nodes = message.elems;
+        console.log(nodes)
+
         let mode = ['RightMode1', 'RightMode1', 'RightMode1', 'RightMode1', 'TopMode1', 'TopMode1', 'RightMode1', 'RightMode1'];
         let PlayResX = option.playResX;
         let PlayResY = option.playResY;
@@ -241,24 +276,33 @@ window._run__script_ = function (option) {
             "[Events]\n" +
             "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Tex\n";
 
-        let nodes = [];
-        res.firstChild.childNodes.forEach(function (node) {
-            if (node.nodeName !== "d") {
-                return;
-            }
-            nodes.push(node);
-        });
+
+        // res.firstChild.childNodes.forEach(function (node) {
+        //     if (node.nodeName !== "d") {
+        //         return;
+        //     }
+        //     nodes.push(node);
+        // });
+
+        // for (let i = 0; i < message.elems.length; i++) {
+        //     message.elems[i]
+        // }
 
         let eachTopsCurrentEndTimeArr = {};
         let eachLinesCurrentEndTimeArr = {};
 
         nodes.sort(nodeSortCompare).forEach(function (node) {
-            if (node.nodeName !== "d") {
-                return;
-            }
 
-            let attr = node.getAttribute("p").split(",");
-            let time = parseFloat(attr[0]) - option.offset;
+            // <d p="1136.31200,1,25,16777215,1627817903,0,85e07b14,52783076239998983,10">原来是这个好家伙</d>
+            // <d p="390.80500,1,25,16777215,1627816944,0,85e07b14,52782573465632771,10">那个是不是小町妹妹的声优啊</d>
+            // <d p="815.00800,1,25,16777215,1627813285,0,5e3568eb,52780655364800517,10">可是你练习两年都没上台</d>
+            // <d p="1230.57600,1,25,16777215,1627812083,0,e991ea89,52780024847138819,10">发出来就是pu一声吧</d>
+
+            // let attr = node.getAttribute("p").split(",");
+            let subMode = mode[node.mode ? node.mode : 0] ? mode[node.mode ? node.mode : 0] : mode[0]
+            let subContent = node.content ? node.content : ''
+
+            let time = parseFloat(node.progress ? node.progress/100 : 0) - option.offset
             let timeInt = Math.floor(time);
 
             if (timeInt < 0 || time < 0 || isNaN(time)) {
@@ -267,16 +311,16 @@ window._run__script_ = function (option) {
 
             let startTime = Math.floor((time / 3600) % 24) + ":" + Math.floor((time / 60) % 60) + ":" + (time % 60).toFixed(2);
             let color = "";
-            if (parseInt(attr[3]) !== 16777215) { // 16777215 白色
+            if (parseInt(node.color ? node.color : 16777215) !== 16777215) { // 16777215 白色
                 //非白色时单独设置字体样式
-                let hexColor = RRGGBB(parseInt(attr[3], 10) & 0xffffff).split(/(..)/).reverse().join('')
+                let hexColor = RRGGBB(parseInt(node.color ? node.color : 16777215, 10) & 0xffffff).split(/(..)/).reverse().join('')
                 color += '\\c&H' + hexColor; //PrimaryColour
                 if (isDarkColor(hexColor)) {
                     color += '\\3c&HEEEEEE' //OutlineColor
                 }
             }
 
-            if (mode[attr[1]] === "TopMode1") {
+            if (subMode === "TopMode1") {
                 let timePos = time + holdTimePos;
                 let y = fontSize;
                 for (let i = 0; i < (PlayResY / fontSize); i++) {
@@ -291,9 +335,9 @@ window._run__script_ = function (option) {
                     break
                 }
                 let endTimePos = Math.floor((timePos / 3600) % 24) + ":" + Math.floor((timePos / 60) % 60) + ":" + (timePos % 60).toFixed(2);
-                assFile += "Dialogue: 0," + startTime + "," + endTimePos + "," + mode[attr[1]] + ",,20,20,2,," + "{\\pos(" + Math.floor(PlayResX / 2) + "," + y + ")" + color + "}" + node.textContent + "\n";
+                assFile += "Dialogue: 0," + startTime + "," + endTimePos + "," + subMode + ",,20,20,2,," + "{\\pos(" + Math.floor(PlayResX / 2) + "," + y + ")" + color + "}" + subContent + "\n";
             } else {
-                let x = Math.floor(node.textContent.length * fontSize / 2);
+                let x = Math.floor(subContent.length * fontSize / 2);
                 let timeMove = time + getRandomArbitrary(holdTimeMove - 3 > 0 ? holdTimeMove - 3 : 1, holdTimeMove - 3 > 0 ? holdTimeMove + 3 : 4);
                 let endTimeMove = Math.floor((timeMove / 3600) % 24) + ":" + Math.floor((timeMove / 60) % 60) + ":" + (timeMove % 60).toFixed(2);
 
@@ -301,7 +345,7 @@ window._run__script_ = function (option) {
 
                 //todo 超出的行考虑删除
                 let perSecondSpeed = PlayResX / (timeMove - time); //每秒移动多少像素
-                let currentTextSpeedOffset = (node.textContent.length * fontSize / perSecondSpeed);//因为字体长度与随机速度的原因, 每条弹幕的速度是有一定偏差的. 这里保持着上一次的偏差值
+                let currentTextSpeedOffset = (subContent.length * fontSize / perSecondSpeed);//因为字体长度与随机速度的原因, 每条弹幕的速度是有一定偏差的. 这里保持着上一次的偏差值
                 for (let i = 0; i < (PlayResY / fontSize); i++) {
                     if (eachLinesCurrentEndTimeArr.hasOwnProperty(i)) {
                         if (eachLinesCurrentEndTimeArr[i].out > timeMove - currentTextSpeedOffset || eachLinesCurrentEndTimeArr[i].in > time - eachLinesCurrentEndTimeArr[i].textOffsetSpeed) {
@@ -318,7 +362,7 @@ window._run__script_ = function (option) {
                     break
                 }
 
-                assFile += "Dialogue: 0," + startTime + "," + endTimeMove + "," + mode[attr[1]] + ",,20,20,2,," + "{\\move(" + (PlayResX + x) + "," + y + "," + (-x) + "," + y + ")" + color + "}" + node.textContent + "\n";
+                assFile += "Dialogue: 0," + startTime + "," + endTimeMove + "," + subMode + ",,20,20,2,," + "{\\move(" + (PlayResX + x) + "," + y + "," + (-x) + "," + y + ")" + color + "}" + subContent + "\n";
             }
         });
 
@@ -350,10 +394,12 @@ window._run__script_ = function (option) {
             headers = option.headers || {},
             timeout = option.timeout || 60000,
             success = option.success,
+            responseType = option.responseType || '',
             error = option.error;
 
         let xhr = new XMLHttpRequest();
         xhr.timeout = timeout;
+        xhr.responseType = responseType;
         xhr.onreadystatechange = function () {
             if (this.readyState === 4) {
                 if (this.status === 200 || this.status === 304) {
