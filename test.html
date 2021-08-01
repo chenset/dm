@@ -7,7 +7,9 @@
 
     <script>
 
-        loadScript("/js/get_v2.js");
+        loadScript("/js/protobuf.min.js",()=>{
+            loadScript("/js/get_v2.js");
+        });
 
         // loadScript("/js/get.js?" + (+new Date()));
 
