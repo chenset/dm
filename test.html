@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SUBTITLE</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <script>
+
+        loadScript("/js/get_v2.js");
+
+        // loadScript("/js/get.js?" + (+new Date()));
+
+        function loadScript(src, callback) {
+            let loadedScript = document.querySelectorAll('head script');
+            for (let i = 0; i < loadedScript.length; i++) {
+                if (loadedScript[i].src === src) {
+                    callback && callback();
+                    return;
+                }
+            }
+
+            let script = document.createElement('script');
+            script.onload = function () {
+                script.onload = null;
+                callback && callback();
+            };
+            script.src = src;
+            document.getElementsByTagName('head')[0].appendChild(script);
+        }
+    </script>
+</head>
+<body>
+</body>
+</html>
