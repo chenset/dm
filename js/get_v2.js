@@ -302,7 +302,7 @@ window._run__script_ = function (option) {
             let subMode = mode[node.mode ? node.mode : 0] ? mode[node.mode ? node.mode : 0] : mode[0]
             let subContent = node.content ? node.content : ''
 
-            let time = parseFloat(node.progress ? node.progress/100 : 0) - option.offset
+            let time = parseFloat(node.progress ? node.progress/1000 : 0) - option.offset
             let timeInt = Math.floor(time);
 
             if (timeInt < 0 || time < 0 || isNaN(time)) {
